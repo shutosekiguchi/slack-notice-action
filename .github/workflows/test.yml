@@ -2,6 +2,12 @@ name: build-test
 on: [pull_request, push]
 
 jobs:
+  always_skip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dummy step
+        run: echo "This job is always skipped"
+    if: false
   check_pr:
     runs-on: ubuntu-latest
     steps:
@@ -17,9 +23,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      - uses: sonots/slack-notice-action@v3
+      - uses: technote-space/workflow-conclusion-action@v3.0.2
+      - uses: ./.github/actions/slack-notice-action
         with:
-          status: ${{ job.status }}
+          status: ${{ env.WORKFLOW_CONCLUSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
