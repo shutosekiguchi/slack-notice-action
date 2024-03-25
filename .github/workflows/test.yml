@@ -51,6 +51,7 @@ jobs:
             echo "WORKFLOW_CONCLUSION=failure" >> $GITHUB_ENV
           fi
 
+      - uses: actions/checkout@v2
       - uses: ./.github/actions/slack-notice-action
         with:
           status: ${{ env.WORKFLOW_CONCLUSION }}
