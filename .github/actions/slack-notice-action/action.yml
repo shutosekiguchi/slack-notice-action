@@ -1,0 +1,9 @@
+name: 'Slack Notice Action'
+description: 'Send a message to Slack'
+inputs:
+  status:
+    description: 'Workflow status'
+    required: true
+runs:
+  using: node20
+  main: '../../../lib/main.js'

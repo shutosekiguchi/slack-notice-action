@@ -2,6 +2,12 @@ name: build-test
 on: [pull_request, push]
 
 jobs:
+  always_skip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dummy step
+        run: echo "This job is always skipped"
+    if: false
   check_pr:
     runs-on: ubuntu-latest
     steps:
@@ -17,9 +23,36 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      - uses: sonots/slack-notice-action@v3
+
+  slack_notice:
+    runs-on: ubuntu-latest
+    needs: [always_skip, check_pr]
+    steps:
+      - run: |
+          RESULTS=$(echo '${{ toJSON(needs) }}' | jq -r '. | to_entries[] | .value.result')
+          RESULTS=$(printf "${RESULTS}" | tr -d '"')
+          echo "${RESULTS}" > results.txt
+          all_success="true"
+          while IFS= read -r result; do
+            if [[ "$result" != "success" ]]; then
+              all_success="false"
+              echo "job_result:${result}"
+              break
+            fi
+            echo "job_result:${result}"
+          done < results.txt
+
+          if [[ "$all_success" == "true" ]]; then
+            echo "All results are success!"
+            echo "WORKFLOW_CONCLUSION=success" >> $GITHUB_ENV
+          else
+            echo "Not all results are success."
+            echo "WORKFLOW_CONCLUSION=failure" >> $GITHUB_ENV
+          fi
+
+      - uses: ./.github/actions/slack-notice-action
         with:
-          status: ${{ job.status }}
+          status: ${{ env.WORKFLOW_CONCLUSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
