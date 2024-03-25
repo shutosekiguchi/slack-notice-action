@@ -27,6 +27,7 @@ jobs:
   slack_notice:
     runs-on: ubuntu-latest
     needs: [always_skip, check_pr]
+    if: always()
     steps:
       - run: |
           RESULTS=$(echo '${{ toJSON(needs) }}' | jq -r '. | to_entries[] | .value.result')
