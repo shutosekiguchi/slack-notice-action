@@ -8,26 +8,23 @@ jobs:
       - name: Dummy step
         run: echo "This job is always skipped"
     if: false
-  check_pr:
+
+  always_fail:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v1
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - run: npm install
-      - run: npm run all
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Dummy step
+        run: exit 1
+
+  always_success:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dummy step
+        run: echo "This job is always successful"
 
   slack-notice-action:
     runs-on: ubuntu-latest
     if: always()
-    needs: [always_skip, check_pr]
+    needs: [always_skip, always_fail, always_success]
     steps:
       - run: |
           RESULTS=$(echo '${{ toJSON(needs) }}' | jq -r '. | to_entries[] | .value.result')
@@ -35,7 +32,7 @@ jobs:
           echo "${RESULTS}" > results.txt
           all_success="true"
           while IFS= read -r result; do
-            if [[ "$result" != "success" ]]; then
+            if [[ "$result" != "success" && "$result" != "skipped" ]]; then
               all_success="false"
               echo "job_result:${result}"
               break
@@ -44,10 +41,10 @@ jobs:
           done < results.txt
 
           if [[ "$all_success" == "true" ]]; then
-            echo "All results are success!"
+            echo "All jobs have either succeeded or been skipped!"
             echo "WORKFLOW_CONCLUSION=success" >> $GITHUB_ENV
           else
-            echo "Not all results are success."
+            echo "Some jobs did not succeed or were not skipped."
             echo "WORKFLOW_CONCLUSION=failure" >> $GITHUB_ENV
           fi
 
