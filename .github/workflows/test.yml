@@ -10,6 +10,7 @@ jobs:
     if: false
   check_pr:
     runs-on: ubuntu-latest
+    needs: always_skip
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v1
@@ -24,11 +25,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  slack_notice:
-    runs-on: ubuntu-latest
-    needs: [always_skip, check_pr]
-    if: always()
-    steps:
       - run: |
           RESULTS=$(echo '${{ toJSON(needs) }}' | jq -r '. | to_entries[] | .value.result')
           RESULTS=$(printf "${RESULTS}" | tr -d '"')
