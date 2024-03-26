@@ -46,7 +46,7 @@ jobs:
             echo "WORKFLOW_CONCLUSION=failure" >> $GITHUB_ENV
           fi
 
-      - uses: ./.github/actions/slack-notice-action
+      - uses: sonots/slack-notice-action@v3
         with:
           status: ${{ env.WORKFLOW_CONCLUSION }}
         env:
