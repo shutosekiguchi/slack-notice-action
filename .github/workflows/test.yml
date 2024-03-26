@@ -2,25 +2,49 @@ name: build-test
 on: [pull_request, push]
 
 jobs:
-  check_pr:
+  always_skip:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/cache@v1
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-      - run: npm install
-      - run: npm run all
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Dummy step
+        run: echo "This job is always skipped"
+    if: false
+
+  always_fail:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dummy step
+        run: exit 1
+
+  always_success:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dummy step
+        run: echo "This job is always successful"
+
+  slack-notice-action:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [always_skip, always_success, always_fail]
+    steps:
+      - run: |
+          
+          all_success="true"
+          job_results=$(echo '${{ toJSON(needs) }}' | jq -r '. | to_entries[] | .value.result' | tr -d '"')
+          for result in $job_results; do
+            echo "job_result:${result}"
+            if [[ "$result" == "failure" ]]; then
+              all_success="false"
+              break
+            fi
+          done
+
+          echo "All jobs have either succeeded or been skipped: $all_success"
+          WORKFLOW_CONCLUSION=$([[ "$all_success" == "true" ]] && echo "success" || echo "failure")
+          echo "WORKFLOW_CONCLUSION=$WORKFLOW_CONCLUSION" >> $GITHUB_ENV
+
       - uses: sonots/slack-notice-action@v3
         with:
-          status: ${{ job.status }}
+          status: ${{ env.WORKFLOW_CONCLUSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: always()
