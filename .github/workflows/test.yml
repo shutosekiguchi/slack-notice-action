@@ -9,11 +9,11 @@ jobs:
         run: echo "This job is always skipped"
     if: false
 
-#  always_fail:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Dummy step
-#        run: exit 1
+  always_fail:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dummy step
+        run: exit 1
 
   always_success:
     runs-on: ubuntu-latest
@@ -24,7 +24,7 @@ jobs:
   slack-notice-action:
     runs-on: ubuntu-latest
     if: always()
-    needs: [always_skip, always_success]
+    needs: [always_skip, always_success, always_fail]
     steps:
       - run: |
           
