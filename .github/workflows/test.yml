@@ -27,26 +27,20 @@ jobs:
     needs: [always_skip, always_success]
     steps:
       - run: |
-          RESULTS=$(echo '${{ toJSON(needs) }}' | jq -r '. | to_entries[] | .value.result')
-          RESULTS=$(printf "${RESULTS}" | tr -d '"')
-          echo "${RESULTS}" > results.txt
+          
           all_success="true"
-          while IFS= read -r result; do
-            if [[ "$result" != "success" && "$result" != "skipped" ]]; then
+          job_results=$(echo '${{ toJSON(needs) }}' | jq -r '. | to_entries[] | .value.result' | tr -d '"')
+          for result in $job_results; do
+            echo "job_result:${result}"
+            if [[ "$result" == "failure" ]]; then
               all_success="false"
-              echo "job_result:${result}"
               break
             fi
-            echo "job_result:${result}"
-          done < results.txt
+          done
 
-          if [[ "$all_success" == "true" ]]; then
-            echo "All jobs have either succeeded or been skipped!"
-            echo "WORKFLOW_CONCLUSION=success" >> $GITHUB_ENV
-          else
-            echo "Some jobs did not succeed or were not skipped."
-            echo "WORKFLOW_CONCLUSION=failure" >> $GITHUB_ENV
-          fi
+          echo "All jobs have either succeeded or been skipped: $all_success"
+          WORKFLOW_CONCLUSION=$([[ "$all_success" == "true" ]] && echo "success" || echo "failure")
+          echo "WORKFLOW_CONCLUSION=$WORKFLOW_CONCLUSION" >> $GITHUB_ENV
 
       - uses: sonots/slack-notice-action@v3
         with:
