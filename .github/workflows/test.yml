@@ -26,6 +26,7 @@ jobs:
 
   slack-notice-action:
     runs-on: ubuntu-latest
+    if: always()
     needs: [always_skip, check_pr]
     steps:
       - run: |
@@ -56,4 +57,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: always()
